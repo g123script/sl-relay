@@ -81,18 +81,14 @@ if (
 {
     return res
         .status(400)
-        .send(
-            "NO RECEIVERS"
-        );
+        .send("NO RECEIVERS");
 }
 
 if (!command)
 {
     return res
         .status(400)
-        .send(
-            "NO COMMAND"
-        );
+        .send("NO COMMAND");
 }
 
 let sent = 0;
@@ -123,7 +119,6 @@ for (const avatar of receivers)
                     "Content-Type":
                     "text/plain"
                 },
-
                 timeout: 5000
             }
         );
