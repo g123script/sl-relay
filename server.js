@@ -76,7 +76,8 @@ const command =
 
 if (
     !receivers ||
-    !receivers.length
+    !Array.isArray(receivers) ||
+    receivers.length === 0
 )
 {
     return res
