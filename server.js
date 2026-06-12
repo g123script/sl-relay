@@ -1,46 +1,145 @@
 const express = require("express");
+const axios = require("axios");
+
 const app = express();
 
 app.use(express.json());
 
-// STORE HUDS (temporary memory)
+// STORE HUDS
 const huds = {};
 
+// REGISTER / UPDATE HUD URL
 app.post("/update", (req, res) => {
+
     const avatar = req.body.avatar;
     const url = req.body.url;
 
-    if (!avatar || !url) {
-        return res.status(400).send("INVALID");
+    if (!avatar || !url)
+    {
+        return res
+            .status(400)
+            .send("INVALID");
     }
 
     huds[avatar] = url;
 
-    console.log("UPDATED:", avatar, url);
+    console.log(
+        "UPDATED:",
+        avatar,
+        url
+    );
 
     res.send("OK");
 });
 
+// GET HUD URL
 app.get("/get/:avatar", (req, res) => {
-    const avatar = req.params.avatar;
 
-    if (huds[avatar]) {
-        res.send(huds[avatar]);
-    } else {
+    const avatar =
+        req.params.avatar;
+
+    if (huds[avatar])
+    {
+        res.send(
+            huds[avatar]
+        );
+    }
+    else
+    {
         res.send("");
     }
 });
 
-app.post("/send", (req, res) => {
+// SEND COMMAND TO RECEIVERS
+app.post("/send", async (req, res) => {
 
-    console.log("SEND BODY:");
-    console.log(req.body);
+    const receivers =
+        req.body.receivers;
 
-    res.send("OK");
+    const command =
+        req.body.command;
+
+    if (
+        !receivers ||
+        !Array.isArray(receivers)
+    )
+    {
+        return res
+            .status(400)
+            .send("NO RECEIVERS");
+    }
+
+    if (!command)
+    {
+        return res
+            .status(400)
+            .send("NO COMMAND");
+    }
+
+    let sent = 0;
+
+    for (const avatar of receivers)
+    {
+        const hudURL =
+            huds[avatar];
+
+        if (!hudURL)
+        {
+            console.log(
+                "HUD NOT FOUND:",
+                avatar
+            );
+
+            continue;
+        }
+
+        try
+        {
+            await axios.post(
+                hudURL,
+                command,
+                {
+                    headers:
+                    {
+                        "Content-Type":
+                        "text/plain"
+                    },
+                    timeout: 5000
+                }
+            );
+
+            sent++;
+
+            console.log(
+                "SENT:",
+                avatar,
+                command
+            );
+        }
+        catch (err)
+        {
+            console.log(
+                "SEND FAILED:",
+                avatar,
+                err.message
+            );
+        }
+    }
+
+    res.send(
+        "SENT TO " +
+        sent +
+        " RECEIVERS"
+    );
 });
 
-const PORT = process.env.PORT || 3000;
+const PORT =
+    process.env.PORT || 3000;
 
 app.listen(PORT, () => {
-    console.log("Relay server running");
+
+    console.log(
+        "Relay server running"
+    );
+
 });
