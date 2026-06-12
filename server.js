@@ -32,6 +32,10 @@ app.get("/get/:avatar", (req, res) => {
 });
 
 app.post("/send", (req, res) => {
+
+    console.log("SEND BODY:");
+    console.log(req.body);
+
     res.send("OK");
 });
 
