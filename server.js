@@ -12,13 +12,25 @@ let huds = {};
 // ====================================
 
 app.post("/update", (req, res) => {
+
+```
 const avatar = req.body.avatar;
 const url = req.body.url;
 
-```
+if (!avatar || !url)
+{
+    return res
+        .status(400)
+        .send("INVALID");
+}
+
 huds[avatar] = url;
 
-console.log("UPDATED:", avatar, url);
+console.log(
+    "UPDATED:",
+    avatar,
+    url
+);
 
 res.send("OK");
 ```
@@ -30,12 +42,19 @@ res.send("OK");
 // ====================================
 
 app.get("/get/:avatar", (req, res) => {
-const avatar = req.params.avatar;
 
 ```
-if (huds[avatar]) {
-    res.send(huds[avatar]);
-} else {
+const avatar =
+    req.params.avatar;
+
+if (huds[avatar])
+{
+    res.send(
+        huds[avatar]
+    );
+}
+else
+{
     res.send("");
 }
 ```
@@ -43,63 +62,112 @@ if (huds[avatar]) {
 });
 
 // ====================================
-// DIRECT SEND
+// SEND COMMAND TO MULTIPLE HUDS
 // ====================================
 
 app.post("/send", async (req, res) => {
-const avatar = req.body.avatar;
-const command = req.body.command;
 
 ```
-const hudURL = huds[avatar];
+const receivers =
+    req.body.receivers;
 
-if (!hudURL) {
-    return res.status(404).send("HUD NOT FOUND");
-}
+const command =
+    req.body.command;
 
-try {
-    const result = await axios.post(
-        hudURL,
-        command,
-        {
-            headers: {
-                "Content-Type": "text/plain"
-            },
-            timeout: 5000
-        }
-    );
-
-    console.log(
-        "SENT:",
-        avatar,
-        command
-    );
-
-    res.send("OK");
-}
-catch (err)
+if (
+    !receivers ||
+    !receivers.length
+)
 {
-    console.log(
-        "SEND FAILED:",
-        avatar,
-        err.message
-    );
-
-    delete huds[avatar];
-
-    res.status(500).send(
-        "SEND FAILED"
-    );
+    return res
+        .status(400)
+        .send(
+            "NO RECEIVERS"
+        );
 }
+
+if (!command)
+{
+    return res
+        .status(400)
+        .send(
+            "NO COMMAND"
+        );
+}
+
+let sent = 0;
+
+for (const avatar of receivers)
+{
+    const hudURL =
+        huds[avatar];
+
+    if (!hudURL)
+    {
+        console.log(
+            "HUD NOT FOUND:",
+            avatar
+        );
+
+        continue;
+    }
+
+    try
+    {
+        await axios.post(
+            hudURL,
+            command,
+            {
+                headers:
+                {
+                    "Content-Type":
+                    "text/plain"
+                },
+
+                timeout: 5000
+            }
+        );
+
+        sent++;
+
+        console.log(
+            "SENT:",
+            avatar,
+            command
+        );
+    }
+    catch (err)
+    {
+        console.log(
+            "SEND FAILED:",
+            avatar,
+            err.message
+        );
+
+        delete huds[avatar];
+    }
+}
+
+res.send(
+    "SENT TO "
+    + sent
+    + " RECEIVERS"
+);
 ```
 
 });
+
+// ====================================
 
 const PORT =
 process.env.PORT || 3000;
 
 app.listen(PORT, () => {
+
+```
 console.log(
-"Relay server running"
+    "Relay server running"
 );
+```
+
 });
